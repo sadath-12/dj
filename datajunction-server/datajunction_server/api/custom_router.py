@@ -25,43 +25,8 @@ from datajunction_server.internal.access.authentication.tokens import create_tok
 from datajunction_server.utils import Settings, get_session, get_settings
 from fastapi import Request
 
-router = APIRouter(tags=["Basic OAuth2"])
+router = APIRouter(tags=["custom router"]) ## for swagger ui
 
-
-@router.post("/basic/user/")
-async def create_a_user(
-    email: str = Form(),
-    username: str = Form(),
-    password: str = Form(),
-    session: AsyncSession = Depends(get_session),
-) -> JSONResponse:
-    """
-    Create a new user
-    """
-    user_result = await session.execute(select(User).where(User.username == username))
-    if user_result.scalar_one_or_none():
-        raise DJException(
-            http_status_code=HTTPStatus.CONFLICT,
-            errors=[
-                DJError(
-                    code=ErrorCode.ALREADY_EXISTS,
-                    message=f"User {username} already exists.",
-                ),
-            ],
-        )
-    new_user = User(
-        email=email,
-        username=username,
-        password=get_password_hash(password),
-        oauth_provider=OAuthProvider.BASIC,
-    )
-    session.add(new_user)
-    await session.commit()
-    await session.refresh(new_user)
-    return JSONResponse(
-        content={"message": "User successfully created"},
-        status_code=HTTPStatus.CREATED,
-    )
 
 async def run_alembic_upgrade():
     # Set the path to the Alembic configuration file
@@ -92,6 +57,7 @@ async def run_alembic_upgrade():
 @router.post("/schema/register/")
 async def schema_register(
     request: Request,
+    session: AsyncSession = Depends(get_session),
 ) -> JSONResponse:
     """
     Create a new schema if it does not exist.
@@ -100,7 +66,6 @@ async def schema_register(
         body  = await request.json()
         schema = body.get("schema")
         print("schema body is",schema)
-        session = await get_session()
         if not schema:
             raise HTTPException(status_code=400, detail="Schema in body is required")
 
@@ -124,45 +89,3 @@ async def schema_register(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.post("/basic/login/")
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    session: AsyncSession = Depends(get_session),
-    settings: Settings = Depends(get_settings),
-):
-    """
-    Get a JWT token and set it as an HTTP only cookie
-    """
-    print("requesting login - ")
-    user = await validate_user_password(
-        username=form_data.username,
-        password=form_data.password,
-        session=session,
-    )
-    response = Response(status_code=HTTPStatus.OK)
-    response.set_cookie(
-        AUTH_COOKIE,
-        create_token(
-            {"username": user.username},
-            secret=settings.secret,
-            iss=settings.url,
-            expires_delta=timedelta(days=365),
-        ),
-        httponly=True,
-    )
-    response.set_cookie(
-        LOGGED_IN_FLAG_COOKIE,
-        "true",
-    )
-    return response
-
-
-@router.post("/logout/")
-def logout():
-    """
-    Logout a user by deleting the auth cookie
-    """
-    response = Response(status_code=HTTPStatus.OK)
-    response.delete_cookie(AUTH_COOKIE, httponly=True)
-    response.delete_cookie(LOGGED_IN_FLAG_COOKIE)
-    return response

@@ -28,7 +28,7 @@ class Settings(BaseSettings):  # pylint: disable=too-few-public-methods
     url: str = "http://localhost:8001/"
 
     # SQLAlchemy URI for the metadata database.
-    index: str = "sqlite:///djqs.db?check_same_thread=False"
+    index: str = "postgresql+psycopg://dj:dj@postgres_metadata:5432/dj"
 
     # The default engine to use for reflection
     default_reflection_engine: str = "default"

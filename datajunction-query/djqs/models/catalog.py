@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from djqs.utils import UTCDatetime
 
 
-class CatalogEngines(SQLModel, table=True):  # type: ignore
+class QSCatalogEngines(SQLModel, table=True):  # type: ignore
     """
     Join table for catalogs and engines.
     """
@@ -34,7 +34,7 @@ class CatalogEngines(SQLModel, table=True):  # type: ignore
     )
 
 
-class Catalog(SQLModel, table=True):  # type: ignore
+class QSCatalog(SQLModel, table=True):  # type: ignore
     """
     A catalog.
     """
@@ -45,7 +45,7 @@ class Catalog(SQLModel, table=True):  # type: ignore
     engines: List[Engine] = Relationship(
         link_model=CatalogEngines,
         sa_relationship_kwargs={
-            "primaryjoin": "Catalog.id==CatalogEngines.catalog_id",
+            "primaryjoin": "QSCatalog.id==CatalogEngines.catalog_id",
             "secondaryjoin": "Engine.id==CatalogEngines.engine_id",
         },
     )

@@ -161,7 +161,21 @@ def get_engine(schema: str) -> AsyncEngine:
     return engine
 
 
-async def get_session(request: Request = None) -> AsyncIterator[AsyncSession]:
+async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
+    """
+    Async database session.
+    """
+    session_manager = await get_session_manager(request)
+    session = session_manager.session()
+    try:
+        yield session
+    except Exception as exc:  # pylint: disable=broad-exception-raised
+        await session.rollback()  # pragma: no cover
+        raise exc  # pragma: no cover
+    finally:
+        await session.close()
+
+async def get_session_for_schema(request: Request) -> AsyncIterator[AsyncSession]:
     """
     Async database session.
     """

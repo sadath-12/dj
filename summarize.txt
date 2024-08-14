@@ -1,0 +1,9 @@
+Conclusion of the call:
+
+1-rename qs tables so same database can be used https://github.com/DataJunction/dj/issues/1143
+2-add custom router as wrapper to dj code since dj code is already there in the package https://pypi.org/project/datajunction-server/
+so oss version will just route to schemas and its our responsibility to create schemas by adding extra routers
+3-maybe add sso for critical endpoints such as creating schemas 
+
+Address the issue originating from pydantic package under fastapi and found a way to do the stuffs differently
+
